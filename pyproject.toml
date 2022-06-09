@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "dashboard_to_csv"
+version = "0.1.0"
+description = "Take dashboard ID, find the metrics, get the metric data, create a folder of CSVs"
+authors = ["Ben Davidson <ben.davidson@dynatrace.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+requests = "python-dotenv"
+pyyaml = "^6.0b1"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
