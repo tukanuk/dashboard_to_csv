@@ -14,7 +14,6 @@ API_TOKEN = settings.API_TOKEN
 
 class DashboardProperties:
     """Properties of the dashboard"""
-    
 
     def __init__(self, id, name, timeframe, management_zone, tiles):
         self.id = id
@@ -28,7 +27,7 @@ class DashboardProperties:
         return f"Id: {self.id}\nDashboard: {self.dashboard_name}\n   Time frame: {self.dashboard_timeframe}\n   Management Zone: {self.dashboard_management_zone}\n   Total Tiles: {len(self.dashboard_tiles)}"
 
     def process_tiles(self):
-        """ Convert the raw tiles dict to TileProperties objects """
+        """Convert the raw tiles dict to TileProperties objects"""
 
         for tile in self.dashboard_tiles:
             name = tile["name"]
@@ -39,9 +38,10 @@ class DashboardProperties:
             tileProperties = TileProperties(name, tileType, tileFilter, queries)
             self.tile_list.append(tileProperties)
 
+
 class TileProperties:
-    """ Properties of a tile """
-   
+    """Properties of a tile"""
+
     def __init__(
         self,
         name,
@@ -70,23 +70,21 @@ class TileProperties:
 
 
 class QueryProperties:
-
     def __init__(self, query) -> None:
-            self.id = query["id"]
-            self.metric = query["metric"]
-            self.spaceAggregation = query["spaceAggregation"]
-            self.timeAggregation = query["timeAggregation"]
-            self.splitBy = query["splitBy"]
-            self.sortBy = query["sortBy"]
-            self.filterBy = query["filterBy"]
-            self.limit = query["limit"]
-            self.metricSelector = query["metricSelector"]
-            self.foldTransformation = query["foldTransformation"]
-            self.enabled = query["enabled"]
+        self.id = query["id"]
+        self.metric = query["metric"]
+        self.spaceAggregation = query["spaceAggregation"]
+        self.timeAggregation = query["timeAggregation"]
+        self.splitBy = query["splitBy"]
+        self.sortBy = query["sortBy"]
+        self.filterBy = query["filterBy"]
+        self.limit = query["limit"]
+        self.metricSelector = query["metricSelector"]
+        self.foldTransformation = query["foldTransformation"]
+        self.enabled = query["enabled"]
 
     def __str__(self) -> str:
         return f"ID: {self.id}\n   Metric: {self.metric}\n   Space Agg: {self.spaceAggregation}\n   Time agg: {self.timeAggregation}\n   SplitBy: {self.splitBy}\n   SortBy: {self.sortBy}\n   FilterBy: {self.filterBy}\n   Limit: {self.limit}\n   MetricSelector: {self.metricSelector}\n   foldTransformation: {self.foldTransformation}\n   enabled: {self.enabled}"
-
 
 
 def cli_parser():
