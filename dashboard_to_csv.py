@@ -1,3 +1,4 @@
+from pkg_resources import empty_provider
 import settings
 import requests
 import json
@@ -33,7 +34,11 @@ class DashboardProperties:
             name = tile["name"]
             tileType = tile["tileType"]
             tileFilter = tile["tileFilter"]
-            queries = tile["queries"]
+
+            if "queries" in tile:
+                queries = tile["queries"]
+            else:
+                queries = None
 
             tileProperties = TileProperties(name, tileType, tileFilter, queries)
             self.tile_list.append(tileProperties)
@@ -56,20 +61,39 @@ class TileProperties:
         self.query_list = self.process_queries()
 
     def __str__(self) -> str:
-        return f"Tile: {self.name}\n   Type: {self.tileType}\n   Filter: {self.tileFilter}\n   Queries: {len(self.queries)}"
+
+        if self.queries is not None:
+            query_string = len(self.queries)
+        else:
+            query_string = 0
+
+        return f"Tile: {self.name}\n   Type: {self.tileType}\n   Filter: {self.tileFilter}\n   Queries: {query_string}"
 
     def process_queries(self):
         """Take the query object and convert to properties"""
 
         processed_query_list = []
 
-        for query in self.queries:
-            processed_query_list.append(QueryProperties(query))
+        if self.queries is not None:
+            for query in self.queries:
+                processed_query_list.append(QueryProperties(query))
 
         return processed_query_list
 
 
 class QueryProperties:
+
+    empty_filterBy = {
+        "filter": None,
+        "globalEntity": None,
+        "filterType": None,
+        "filterOperator": None,
+        "entityAttribute": None,
+        "relationship": None,
+        "nestedFilters": [],
+        "criteria": [],
+    }
+
     def __init__(self, query) -> None:
         self.id = query["id"]
         self.metric = query["metric"]
@@ -77,7 +101,12 @@ class QueryProperties:
         self.timeAggregation = query["timeAggregation"]
         self.splitBy = query["splitBy"]
         self.sortBy = query["sortBy"]
-        self.filterBy = query["filterBy"]
+
+        if self.empty_filterBy != query["filterBy"]:
+            self.filterBy = query["filterBy"]
+        else:
+            self.filterBy = "None"
+
         self.limit = query["limit"]
         self.metricSelector = query["metricSelector"]
         self.foldTransformation = query["foldTransformation"]
@@ -175,14 +204,17 @@ def main():
         dashboard_dict["tiles"],
     )
 
+    # Print dashboard info
     print("== Dashboard shared properties ==")
     print(dashboard_properties)
 
     dashboard_properties.process_tiles()
     # print(dashboard_properties.dashboard_tiles[0])
 
+    # print info on each tile
     for tile in dashboard_properties.tile_list:
         print(tile)
+        # print info on each query where applicable
         for query in tile.query_list:
             print(query)
 
