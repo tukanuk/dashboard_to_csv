@@ -1,3 +1,4 @@
+from distutils.command.build import build
 from pkg_resources import empty_provider
 import settings
 import requests
@@ -23,6 +24,7 @@ class DashboardProperties:
         self.dashboard_management_zone = management_zone
         self.dashboard_tiles = tiles
         self.tile_list = []
+        self.metric_list = []
 
     def __str__(self) -> str:
         return f"Id: {self.id}\nDashboard: {self.dashboard_name}\n   Time frame: {self.dashboard_timeframe}\n   Management Zone: {self.dashboard_management_zone}\n   Total Tiles: {len(self.dashboard_tiles)}"
@@ -43,6 +45,14 @@ class DashboardProperties:
             tileProperties = TileProperties(name, tileType, tileFilter, queries)
             self.tile_list.append(tileProperties)
 
+    def build_metric_list(self):
+        """Find dashboard tiles that are charts and get the metric info"""
+
+        for tile in self.tile_list:
+            if tile.tileType == "DATA_EXPLORER":
+
+                for query in tile.queries:
+                    self.metric_list.append(query)
 
 class TileProperties:
     """Properties of a tile"""
@@ -165,10 +175,6 @@ def get_dashboard_info(dashboard_id, token):
     return json.loads(response.text)
 
 
-def get_chart_tiles():
-    """Find dashboard tiles that are charts and get the metric info"""
-
-
 def export_json(dashboard_dict):
     """Export the dashboard json"""
 
@@ -211,13 +217,18 @@ def main():
     dashboard_properties.process_tiles()
     # print(dashboard_properties.dashboard_tiles[0])
 
-    # print info on each tile
     for tile in dashboard_properties.tile_list:
-        print(tile)
+        # print info on each tile
+        print("================================================================================")
+        print(f"{tile}")
         # print info on each query where applicable
         for query in tile.query_list:
-            print(query)
+            print(f"{query}")
 
+    # build a list of metrics and their properties
+    dashboard_properties.build_metric_list()
+
+    print(dashboard_properties.metric_list)
 
 if __name__ == "__main__":
     main()
