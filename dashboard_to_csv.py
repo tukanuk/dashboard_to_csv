@@ -230,5 +230,7 @@ def main():
 
     print(dashboard_properties.metric_list)
 
+    # create the metric queries
+
 if __name__ == "__main__":
     main()
