@@ -1,9 +1,9 @@
-from distutils.command.build import build
-from pkg_resources import empty_provider
-import settings
-import requests
-import json
+""" Find metrics in a dashboard and produces csv files"""
+
 import argparse
+import json
+import requests
+import settings
 
 # Complex dashboard
 # DASHBOARD_ID = "74fa7041-b268-255e-58d2-91901268f9d0"
@@ -53,6 +53,7 @@ class DashboardProperties:
 
                 for query in tile.queries:
                     self.metric_list.append(query)
+
 
 class TileProperties:
     """Properties of a tile"""
@@ -178,10 +179,7 @@ def get_dashboard_info(dashboard_id, token):
 def export_json(dashboard_dict):
     """Export the dashboard json"""
 
-    with open(
-        "dashboard.json",
-        "w",
-    ) as file:
+    with open("dashboard.json", "w", encoding="UTF-8") as file:
         file.write(json.dumps(dashboard_dict, indent=4))
 
 
@@ -219,7 +217,9 @@ def main():
 
     for tile in dashboard_properties.tile_list:
         # print info on each tile
-        print("================================================================================")
+        print(
+            "================================================================================"
+        )
         print(f"{tile}")
         # print info on each query where applicable
         for query in tile.query_list:
@@ -229,6 +229,7 @@ def main():
     dashboard_properties.build_metric_list()
 
     print(dashboard_properties.metric_list)
+
 
 if __name__ == "__main__":
     main()
