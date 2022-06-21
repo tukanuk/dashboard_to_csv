@@ -1,9 +1,14 @@
-from distutils.command.build import build
-from pkg_resources import empty_provider
-import settings
-import requests
-import json
+""" Converts dashboards charts to csv files """
+
+# from distutils.command.build import build
+# from pkg_resources import empty_provider
 import argparse
+import json
+from textwrap import dedent
+
+import requests
+
+import settings
 
 # Complex dashboard
 # DASHBOARD_ID = "74fa7041-b268-255e-58d2-91901268f9d0"
@@ -17,8 +22,9 @@ API_TOKEN = settings.API_TOKEN
 class DashboardProperties:
     """Properties of the dashboard"""
 
-    def __init__(self, id, name, timeframe, management_zone, tiles):
-        self.id = id
+    def __init__(self, ids, name, timeframe, management_zone, tiles):
+        # pylint: disable=invalid-name
+        self.ids = ids
         self.dashboard_name = name
         self.dashboard_timeframe = timeframe
         self.dashboard_management_zone = management_zone
@@ -27,10 +33,18 @@ class DashboardProperties:
         self.metric_list = []
 
     def __str__(self) -> str:
-        return f"Id: {self.id}\nDashboard: {self.dashboard_name}\n   Time frame: {self.dashboard_timeframe}\n   Management Zone: {self.dashboard_management_zone}\n   Total Tiles: {len(self.dashboard_tiles)}"
+        return_string = (
+            f"Id: {self.ids}\n"
+            f"  Dashboard: {self.dashboard_name}\n"
+            f"  Time frame: {self.dashboard_timeframe}\n"
+            f"  Management Zone: {self.dashboard_management_zone}\n"
+            f"  Total Tiles: {len(self.dashboard_tiles)}"
+        )
+        return return_string
 
     def process_tiles(self):
         """Convert the raw tiles dict to TileProperties objects"""
+        # pylint: disable=invalid-name
 
         for tile in self.dashboard_tiles:
             name = tile["name"]
@@ -54,8 +68,10 @@ class DashboardProperties:
                 for query in tile.queries:
                     self.metric_list.append(query)
 
+
 class TileProperties:
     """Properties of a tile"""
+    # pylint: disable=invalid-name
 
     def __init__(
         self,
@@ -77,7 +93,11 @@ class TileProperties:
         else:
             query_string = 0
 
-        return f"Tile: {self.name}\n   Type: {self.tileType}\n   Filter: {self.tileFilter}\n   Queries: {query_string}"
+        return dedent(f"""
+            Tile: {self.name}
+              Type: {self.tileType}
+              Filter: {self.tileFilter}
+              Queries: {query_string}""")
 
     def process_queries(self):
         """Take the query object and convert to properties"""
@@ -92,6 +112,7 @@ class TileProperties:
 
 
 class QueryProperties:
+    """ Build out the queries """
 
     empty_filterBy = {
         "filter": None,
@@ -105,6 +126,7 @@ class QueryProperties:
     }
 
     def __init__(self, query) -> None:
+        # pylint: disable=invalid-name
         self.id = query["id"]
         self.metric = query["metric"]
         self.spaceAggregation = query["spaceAggregation"]
@@ -123,7 +145,18 @@ class QueryProperties:
         self.enabled = query["enabled"]
 
     def __str__(self) -> str:
-        return f"ID: {self.id}\n   Metric: {self.metric}\n   Space Agg: {self.spaceAggregation}\n   Time agg: {self.timeAggregation}\n   SplitBy: {self.splitBy}\n   SortBy: {self.sortBy}\n   FilterBy: {self.filterBy}\n   Limit: {self.limit}\n   MetricSelector: {self.metricSelector}\n   foldTransformation: {self.foldTransformation}\n   enabled: {self.enabled}"
+        return dedent(f"""
+            ID: {self.id}
+               Metric: {self.metric}
+               Space Agg: {self.spaceAggregation}
+               Time agg: {self.timeAggregation}
+               SplitBy: {self.splitBy}
+               SortBy: {self.sortBy}
+               FilterBy: {self.filterBy:<30}
+               Limit: {self.limit}   
+               MetricSelector: {self.metricSelector}   
+               foldTransformation: {self.foldTransformation}   
+               enabled: {self.enabled}""")
 
 
 def cli_parser():
@@ -178,15 +211,13 @@ def get_dashboard_info(dashboard_id, token):
 def export_json(dashboard_dict):
     """Export the dashboard json"""
 
-    with open(
-        "dashboard.json",
-        "w",
-    ) as file:
+    with open("dashboard.json", "w", encoding="UTC-8") as file:
         file.write(json.dumps(dashboard_dict, indent=4))
 
 
 def main():
     """Main"""
+    # pylint: disable=invalid-name
 
     dashboard_id, output_json = cli_parser()
 
@@ -219,7 +250,9 @@ def main():
 
     for tile in dashboard_properties.tile_list:
         # print info on each tile
-        print("================================================================================")
+        print(
+            "================================================================================"
+        )
         print(f"{tile}")
         # print info on each query where applicable
         for query in tile.query_list:
@@ -229,6 +262,7 @@ def main():
     dashboard_properties.build_metric_list()
 
     print(dashboard_properties.metric_list)
+
 
 if __name__ == "__main__":
     main()
