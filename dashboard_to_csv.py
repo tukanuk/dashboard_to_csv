@@ -173,11 +173,19 @@ def cli_parser():
     )
 
     parser.add_argument(
+        "-s",
+        "--store",
+        action="store_true",
+        default=False,
+        help="Output the dashboard JSON to dashboard.json",
+    )
+
+    parser.add_argument(
         "-j",
         "--json",
         action="store_true",
         default=False,
-        help="Output the dashboard JSON to dashboard.json",
+        help="Use an offline dashboard for testing"
     )
 
     args = parser.parse_args()
@@ -187,9 +195,11 @@ def cli_parser():
     else:
         dashboard_id = DASHBOARD_ID
 
-    output_json = args.json
+    output_json = args.store
 
-    return dashboard_id, output_json
+    use_offline_json = args.json
+
+    return dashboard_id, output_json, use_offline_json
 
 
 def get_dashboard_info(dashboard_id, token):
@@ -211,17 +221,23 @@ def get_dashboard_info(dashboard_id, token):
 def export_json(dashboard_dict):
     """Export the dashboard json"""
 
-    with open("dashboard.json", "w", encoding="UTC-8") as file:
-        file.write(json.dumps(dashboard_dict, indent=4))
+    with open("dashboard.json", "w", encoding="utf-8") as file:
+        json.dump(dashboard_dict, file, indent=4)
+        # file.write(json.dumps(dashboard_dict, indent=4))
 
 
 def main():
     """Main"""
     # pylint: disable=invalid-name
 
-    dashboard_id, output_json = cli_parser()
+    dashboard_id, output_json, use_offline_json = cli_parser()
 
-    dashboard_dict = get_dashboard_info(dashboard_id, API_TOKEN)
+    if not use_offline_json:
+        dashboard_dict = get_dashboard_info(dashboard_id, API_TOKEN)
+    else:
+        with open("dashboard.json", "r") as file:
+            print("=== Reading offline json ===")
+            dashboard_dict = json.load(file)    
 
     if output_json:
         export_json(dashboard_dict)
