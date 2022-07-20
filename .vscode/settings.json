@@ -1,4 +1,5 @@
 {
     "python.linting.pylintEnabled": true,
-    "python.linting.enabled": true
+    "python.linting.enabled": true,
+    "python.linting.pylintPath": "/Users/ben.davidson/Library/Caches/pypoetry/virtualenvs/dashboard-to-csv-xBMFdW3g-py3.11/bin/pylint"
 }

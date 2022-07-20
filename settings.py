@@ -13,9 +13,9 @@ API_TOKEN = os.getenv(".ENV_API_TOKEN")
 """
 
 import os
-
 from dotenv import load_dotenv
 
 load_dotenv()
 
-API_TOKEN = os.getenv("API_TOKEN")
+API_TOKEN = os.getenv("DB_CSV_API_TOKEN")
+ENDPOINT = os.getenv("ENDPOINT")

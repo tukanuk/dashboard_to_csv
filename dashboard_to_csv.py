@@ -11,6 +11,7 @@ import settings
 # Simple dashboard
 global DASHBOARD_ID
 DASHBOARD_ID = "6b20240d-6c10-4c96-824c-3bb47183fc10"
+ENDPOINT = settings.ENDPOINT
 API_TOKEN = settings.API_TOKEN
 
 
@@ -163,7 +164,7 @@ def cli_parser():
 def get_dashboard_info(dashboard_id, token):
     """Gets the dashboard info"""
 
-    url = f"https://rvi27222.sprint.dynatracelabs.com/api/config/v1/dashboards/{dashboard_id}"
+    url = f"{ENDPOINT}{dashboard_id}"
 
     payload = {}
     headers = {
@@ -171,8 +172,12 @@ def get_dashboard_info(dashboard_id, token):
         "Authorization": f"Api-Token {token}",
     }
 
-    response = requests.request("GET", url, headers=headers, data=payload)
-
+    try:
+        response = requests.request("GET", url, headers=headers, data=payload)
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        raise SystemExit(err) from err
+    
     return json.loads(response.text)
 
 
