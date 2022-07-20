@@ -2,8 +2,13 @@
 
 import argparse
 import json
+
 import requests
+from requests import HTTPError
+
 import settings
+
+# pylint: disable=invalid-name
 
 # Complex dashboard
 # DASHBOARD_ID = "74fa7041-b268-255e-58d2-91901268f9d0"
@@ -18,8 +23,8 @@ API_TOKEN = settings.API_TOKEN
 class DashboardProperties:
     """Properties of the dashboard"""
 
-    def __init__(self, id, name, timeframe, management_zone, tiles):
-        self.id = id
+    def __init__(self, dashboard_id, name, timeframe, management_zone, tiles):
+        self.id = dashboard_id
         self.dashboard_name = name
         self.dashboard_timeframe = timeframe
         self.dashboard_management_zone = management_zone
@@ -28,7 +33,10 @@ class DashboardProperties:
         self.metric_list = []
 
     def __str__(self) -> str:
-        return f"Id: {self.id}\nDashboard: {self.dashboard_name}\n   Time frame: {self.dashboard_timeframe}\n   Management Zone: {self.dashboard_management_zone}\n   Total Tiles: {len(self.dashboard_tiles)}"
+        return (f"Id: {self.id}\nDashboard: {self.dashboard_name}\n"
+                f"Time frame: {self.dashboard_timeframe}\n"
+                f"Management Zone: {self.dashboard_management_zone}\n"
+                f"Total Tiles: {len(self.dashboard_tiles)}")
 
     def process_tiles(self):
         """Convert the raw tiles dict to TileProperties objects"""
@@ -79,7 +87,10 @@ class TileProperties:
         else:
             query_string = 0
 
-        return f"Tile: {self.name}\n   Type: {self.tileType}\n   Filter: {self.tileFilter}\n   Queries: {query_string}"
+        return (f"Tile: {self.name}\n"
+                f"   Type: {self.tileType}\n"
+                f"   Filter: {self.tileFilter}\n"
+                f"   Queries: {query_string}")
 
     def process_queries(self):
         """Take the query object and convert to properties"""
@@ -94,6 +105,7 @@ class TileProperties:
 
 
 class QueryProperties:
+    """Properties of a query"""
 
     empty_filterBy = {
         "filter": None,
@@ -125,7 +137,17 @@ class QueryProperties:
         self.enabled = query["enabled"]
 
     def __str__(self) -> str:
-        return f"ID: {self.id}\n   Metric: {self.metric}\n   Space Agg: {self.spaceAggregation}\n   Time agg: {self.timeAggregation}\n   SplitBy: {self.splitBy}\n   SortBy: {self.sortBy}\n   FilterBy: {self.filterBy}\n   Limit: {self.limit}\n   MetricSelector: {self.metricSelector}\n   foldTransformation: {self.foldTransformation}\n   enabled: {self.enabled}"
+        return (f"ID: {self.id}\n"
+                f"   Metric: {self.metric}\n"
+                f"   Space Agg: {self.spaceAggregation}\n"
+                f"   Time agg: {self.timeAggregation}\n"
+                f"   SplitBy: {self.splitBy}\n"
+                f"   SortBy: {self.sortBy}\n"
+                f"   FilterBy: {self.filterBy}\n"
+                f"   Limit: {self.limit}\n"
+                f"   MetricSelector: {self.metricSelector}\n"
+                f"   foldTransformation: {self.foldTransformation}\n"
+                f"   enabled: {self.enabled}")
 
 
 def cli_parser():
@@ -175,9 +197,9 @@ def get_dashboard_info(dashboard_id, token):
     try:
         response = requests.request("GET", url, headers=headers, data=payload)
         response.raise_for_status()
-    except requests.exceptions.HTTPError as err:
+    except HTTPError as err:
         raise SystemExit(err) from err
-    
+
     return json.loads(response.text)
 
 
@@ -222,9 +244,7 @@ def main():
 
     for tile in dashboard_properties.tile_list:
         # print info on each tile
-        print(
-            "================================================================================"
-        )
+        print("================================================================================")
         print(f"{tile}")
         # print info on each query where applicable
         for query in tile.query_list:
