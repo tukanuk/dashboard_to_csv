@@ -2,11 +2,14 @@
 
 import argparse
 import json
+import textwrap
+from colorama import Fore, Back, Style
 
 import requests
 from requests import HTTPError
 
 import settings
+import utilities
 
 # pylint: disable=invalid-name
 
@@ -33,25 +36,31 @@ class DashboardProperties:
         self.metric_list = []
 
     def __str__(self) -> str:
-        return (f"Id: {self.id}\nDashboard: {self.dashboard_name}\n"
+        return (f"{Fore.CYAN}Id: {self.id}\nDashboard: {self.dashboard_name}\n"
                 f"Time frame: {self.dashboard_timeframe}\n"
                 f"Management Zone: {self.dashboard_management_zone}\n"
-                f"Total Tiles: {len(self.dashboard_tiles)}")
+                f"Total Tiles: {len(self.dashboard_tiles)}{Style.RESET_ALL}")
 
     def process_tiles(self):
         """Convert the raw tiles dict to TileProperties objects"""
 
         for tile in self.dashboard_tiles:
+            # print(tile)
             name = tile["name"]
             tileType = tile["tileType"]
             tileFilter = tile["tileFilter"]
+
+            if "metricExpressions" in tile:
+                metricExpressions = tile["metricExpressions"][0]
+            else:
+                metricExpressions = None
 
             if "queries" in tile:
                 queries = tile["queries"]
             else:
                 queries = None
 
-            tileProperties = TileProperties(name, tileType, tileFilter, queries)
+            tileProperties = TileProperties(name, tileType, tileFilter, queries, metricExpressions)
             self.tile_list.append(tileProperties)
 
     def build_metric_list(self):
@@ -73,12 +82,14 @@ class TileProperties:
         tileType,
         tileFilter,
         queries,
+        metricExpressions
     ):
         self.name = name
         self.tileType = tileType
         self.tileFilter = tileFilter
         self.queries = queries
         self.query_list = self.process_queries()
+        self.metricExpressions = metricExpressions
 
     def __str__(self) -> str:
 
@@ -87,10 +98,17 @@ class TileProperties:
         else:
             query_string = 0
 
-        return (f"Tile: {self.name}\n"
+        if self.metricExpressions:
+            metric_exp_indent = utilities.format_string(self.metricExpressions, 100, 22)
+        else:
+            metric_exp_indent = ""
+
+        return (f"{Fore.GREEN}Tile: {self.name}\n{Fore.RESET}"
                 f"   Type: {self.tileType}\n"
                 f"   Filter: {self.tileFilter}\n"
-                f"   Queries: {query_string}")
+                f"   Queries: {query_string}\n"
+                f"   Metric Expression: {metric_exp_indent}"
+               )
 
     def process_queries(self):
         """Take the query object and convert to properties"""
@@ -137,17 +155,23 @@ class QueryProperties:
         self.enabled = query["enabled"]
 
     def __str__(self) -> str:
+
+        if self.filterBy:
+            indent_filterBy = utilities.format_string(str(self.filterBy), 100, 15)
+        else:
+            indent_filterBy = ""
+        
         return (f"ID: {self.id}\n"
-                f"   Metric: {self.metric}\n"
-                f"   Space Agg: {self.spaceAggregation}\n"
-                f"   Time agg: {self.timeAggregation}\n"
-                f"   SplitBy: {self.splitBy}\n"
-                f"   SortBy: {self.sortBy}\n"
-                f"   FilterBy: {self.filterBy}\n"
-                f"   Limit: {self.limit}\n"
-                f"   MetricSelector: {self.metricSelector}\n"
-                f"   foldTransformation: {self.foldTransformation}\n"
-                f"   enabled: {self.enabled}")
+                f"{Fore.RED}   Metric: {self.metric}\n{Fore.RESET}"
+                f"     Space Agg: {self.spaceAggregation}\n"
+                f"     Time agg: {self.timeAggregation}\n"
+                f"     SplitBy: {self.splitBy}\n"
+                f"     SortBy: {self.sortBy}\n"
+                f"     FilterBy: {indent_filterBy}\n"
+                f"     Limit: {self.limit}\n"
+                f"     MetricSelector: {self.metricSelector}\n"
+                f"     foldTransformation: {self.foldTransformation}\n"
+                f"     enabled: {self.enabled}")
 
 
 def cli_parser():
@@ -232,7 +256,7 @@ def main():
         dashboard_dict["dashboardMetadata"]["name"],
         timeframe,
         managementZone,
-        dashboard_dict["tiles"],
+        dashboard_dict["tiles"]
     )
 
     # Print dashboard info
@@ -253,7 +277,7 @@ def main():
     # build a list of metrics and their properties
     dashboard_properties.build_metric_list()
 
-    print(dashboard_properties.metric_list)
+    # print(dashboard_properties.metric_list)
 
 
 if __name__ == "__main__":
