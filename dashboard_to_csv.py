@@ -1,12 +1,14 @@
 """ Find metrics in a dashboard and produces csv files"""
 
 import argparse
+import os
 import json
-import textwrap
-from colorama import Fore, Back, Style
+import re
+
+from colorama import Fore, Style
 
 import requests
-from requests import HTTPError
+from requests import HTTPError, head
 
 import settings
 import utilities
@@ -69,8 +71,46 @@ class DashboardProperties:
         for tile in self.tile_list:
             if tile.tileType == "DATA_EXPLORER":
 
-                for query in tile.queries:
-                    self.metric_list.append(query)
+                # with the advent of tile MetricSelector field, we can simplify this
+                # for query in tile.queries:
+                #     self.metric_list.append(query)
+
+                self.metric_list.append(tile.metricExpressions)
+
+    def get_metric_data(self, token):
+        """ Use the Metric v2 API to get CSV data """
+
+        metric_urls = []
+
+        regex = r"=(.+)&(?=\()(.+)"
+        for metric_expression in self.metric_list:
+            matches = re.findall(regex, metric_expression)
+            resolution, metric  = matches[0]
+
+            # encode HTML entity
+            if resolution != "null":
+                metric_urls.append({"metric": metric, "resolution": resolution})
+            else:
+                metric_urls.append({"metric": metric, "resolution": "120"})
+
+        for metric in metric_urls:
+            print(metric)
+
+        for metric_url in metric_urls:
+            url = settings.TENANT + "/api/v2/metrics/query"
+            payload = {}
+            headers = {
+                "accept": "text/csv; header=present; charset=utf-8",
+                "Authorization": f"Api-Token {token}"
+            }
+
+            try:
+                response = requests.request("GET", url, params={"metricSelector": metric_url['metric'], "resolution": metric_url['resolution']}, headers=headers, data=payload)
+                response.raise_for_status()
+            except HTTPError as err:
+                raise SystemExit(err) from err
+
+            print(response.text)
 
 
 class TileProperties:
@@ -99,14 +139,14 @@ class TileProperties:
             query_string = 0
 
         if self.metricExpressions:
-            metric_exp_indent = utilities.format_string(self.metricExpressions, 100, 22)
+            metric_exp_indent = utilities.format_string(self.metricExpressions, indent=22)
         else:
             metric_exp_indent = ""
 
         return (f"{Fore.GREEN}Tile: {self.name}\n{Fore.RESET}"
-                f"   Type: {self.tileType}\n"
-                f"   Filter: {self.tileFilter}\n"
-                f"   Queries: {query_string}\n"
+                f"   Type:              {self.tileType}\n"
+                f"   Filter:            {self.tileFilter}\n"
+                f"   Queries:           {query_string}\n"
                 f"   Metric Expression: {metric_exp_indent}"
                )
 
@@ -157,21 +197,21 @@ class QueryProperties:
     def __str__(self) -> str:
 
         if self.filterBy:
-            indent_filterBy = utilities.format_string(str(self.filterBy), 100, 15)
+            indent_filterBy = utilities.format_string(str(self.filterBy), indent=25)
         else:
             indent_filterBy = ""
         
         return (f"ID: {self.id}\n"
                 f"{Fore.RED}   Metric: {self.metric}\n{Fore.RESET}"
-                f"     Space Agg: {self.spaceAggregation}\n"
-                f"     Time agg: {self.timeAggregation}\n"
-                f"     SplitBy: {self.splitBy}\n"
-                f"     SortBy: {self.sortBy}\n"
-                f"     FilterBy: {indent_filterBy}\n"
-                f"     Limit: {self.limit}\n"
-                f"     MetricSelector: {self.metricSelector}\n"
+                f"     Space Agg:          {self.spaceAggregation}\n"
+                f"     Time agg:           {self.timeAggregation}\n"
+                f"     SplitBy:            {self.splitBy}\n"
+                f"     SortBy:             {self.sortBy}\n"
+                f"     FilterBy:           {indent_filterBy}\n"
+                f"     Limit:              {self.limit}\n"
+                f"     MetricSelector:     {self.metricSelector}\n"
                 f"     foldTransformation: {self.foldTransformation}\n"
-                f"     enabled: {self.enabled}")
+                f"     enabled:            {self.enabled}")
 
 
 def cli_parser():
@@ -259,8 +299,10 @@ def main():
         dashboard_dict["tiles"]
     )
 
+    columns, _ = os.get_terminal_size()
+
     # Print dashboard info
-    print("== Dashboard shared properties ==")
+    utilities.section_break("Dashboard shared properties")
     print(dashboard_properties)
 
     dashboard_properties.process_tiles()
@@ -268,7 +310,7 @@ def main():
 
     for tile in dashboard_properties.tile_list:
         # print info on each tile
-        print("================================================================================")
+        print("=" * columns)
         print(f"{tile}")
         # print info on each query where applicable
         for query in tile.query_list:
@@ -277,7 +319,17 @@ def main():
     # build a list of metrics and their properties
     dashboard_properties.build_metric_list()
 
-    # print(dashboard_properties.metric_list)
+    utilities.section_break("Metric List")
+    for i, metric in enumerate(dashboard_properties.metric_list, 1):
+        format_metic = utilities.format_string(metric, line_length=columns-4, indent=4)
+        print(Fore.YELLOW + str(i) + ": " + format_metic + Fore.RESET)
+
+    utilities.section_break("Gathering metric data from the API")
+
+    dashboard_properties.get_metric_data(API_TOKEN)
+
+    utilities.section_break("Exporting to CSV")
+
 
 
 if __name__ == "__main__":

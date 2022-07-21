@@ -1,12 +1,18 @@
 """ A set of convience utilities """
 
-from mimetypes import init
+import os
 import textwrap
+from colorama import Fore
 
-def format_string(source_string: str, line_length = 40, indent = 4) -> str:
+
+def format_string(source_string: str, line_length = 0, indent = 4) -> str:
     """ Utility function to format blocks of text """
 
     result = ""
+
+    if line_length == 0:
+        columns, _ = os.get_terminal_size()
+        line_length = columns - indent
 
     first_line = source_string[0:line_length]
     remaining = source_string[line_length:]
@@ -22,3 +28,13 @@ def format_string(source_string: str, line_length = 40, indent = 4) -> str:
         result = result + line + "\n"
 
     return result
+
+def section_break(text: str, line_length: int = 0):
+    """ Creates a section break """
+
+    if line_length == 0:
+        terminal_columns, _ = os.get_terminal_size()
+        line_length = terminal_columns
+    print ()
+    print ("=" * line_length)
+    print (Fore.GREEN + text + Fore.RESET)

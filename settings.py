@@ -19,3 +19,4 @@ load_dotenv()
 
 API_TOKEN = os.getenv("DB_CSV_API_TOKEN")
 ENDPOINT = os.getenv("ENDPOINT")
+TENANT = os.getenv("TENANT")
