@@ -8,7 +8,7 @@ import re
 from colorama import Fore, Style
 
 import requests
-from requests import HTTPError, head
+from requests import HTTPError
 
 import settings
 import utilities
@@ -75,28 +75,27 @@ class DashboardProperties:
                 # for query in tile.queries:
                 #     self.metric_list.append(query)
 
-                self.metric_list.append(tile.metricExpressions)
+                self.metric_list.append({"tile_name": tile.name, "metric_expression": tile.metricExpressions})
 
     def get_metric_data(self, token):
         """ Use the Metric v2 API to get CSV data """
 
         metric_urls = []
+        csv_result = []
 
-        regex = r"=(.+)&(?=\()(.+)"
-        for metric_expression in self.metric_list:
-            matches = re.findall(regex, metric_expression)
+
+        for metric_data in self.metric_list:
+            
+            # Reformat the expression to the API format
+            regex = r"=(.+)&(?=\()(.+)"
+            matches = re.findall(regex, metric_data['metric_expression'])
             resolution, metric  = matches[0]
 
-            # encode HTML entity
-            if resolution != "null":
-                metric_urls.append({"metric": metric, "resolution": resolution})
-            else:
-                metric_urls.append({"metric": metric, "resolution": "120"})
-
-        for metric in metric_urls:
-            print(metric)
-
-        for metric_url in metric_urls:
+            if resolution == "null":
+                resolution = "120"
+            metric_urls.append({"tile_name": metric_data['tile_name'], "metric": metric, "resolution": resolution})
+            
+        for i, metric_data in enumerate(metric_urls, 1):
             url = settings.TENANT + "/api/v2/metrics/query"
             payload = {}
             headers = {
@@ -105,12 +104,26 @@ class DashboardProperties:
             }
 
             try:
-                response = requests.request("GET", url, params={"metricSelector": metric_url['metric'], "resolution": metric_url['resolution']}, headers=headers, data=payload)
+                response = requests.request("GET", url, params={"metricSelector": metric_data['metric'], "resolution": metric_data['resolution']}, headers=headers, data=payload)
                 response.raise_for_status()
             except HTTPError as err:
                 raise SystemExit(err) from err
 
-            print(response.text)
+            regex = r"(?:\()([a-z]+?:[^:]+|com[^:]+)"
+            matches = re.findall(regex, metric_data['metric'])
+            metric_name = ""
+            for j, match in enumerate(matches):
+                if j > 0:
+                    metric_name += "&" + match
+                else:
+                    metric_name += match
+
+            sep = "\n"
+            print(f"{i}: {metric_name:60} ✅ ({response.text.count(sep)} lines)")
+
+            csv_result.append({"tile_name": metric_data['tile_name'], "metric_name": metric_name, "csv_data": response.text})
+
+        return csv_result
 
 
 class TileProperties:
@@ -321,14 +334,19 @@ def main():
 
     utilities.section_break("Metric List")
     for i, metric in enumerate(dashboard_properties.metric_list, 1):
-        format_metic = utilities.format_string(metric, line_length=columns-4, indent=4)
+        format_metic = utilities.format_string(metric['metric_expression'], line_length=columns-4, indent=4)
         print(Fore.YELLOW + str(i) + ": " + format_metic + Fore.RESET)
 
     utilities.section_break("Gathering metric data from the API")
 
-    dashboard_properties.get_metric_data(API_TOKEN)
+    csv_result = dashboard_properties.get_metric_data(API_TOKEN)
 
     utilities.section_break("Exporting to CSV")
+
+    tenant_name = settings.TENANT.split('.')[0].split('//')[1].replace(':', '_')
+    print(tenant_name)
+    utilities.write_to_csv(tenant_name, dashboard_properties.dashboard_name, csv_result, "./csv_output")
+
 
 
 

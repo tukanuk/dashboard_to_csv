@@ -2,6 +2,7 @@
 dashboard.json
 .DS_Store
 test_metrics.json
+csv_output/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
