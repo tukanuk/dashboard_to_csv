@@ -1,7 +1,7 @@
 """ A set of convience utilities """
 
-from encodings import utf_8
 import os
+from os import path, makedirs
 import textwrap
 from colorama import Fore
 
@@ -44,14 +44,14 @@ def write_to_csv(tenant_name, dashboard_id, csv_results, output_directory):
     """ Write metrics to csv files """
 
     dashboard_id = str(dashboard_id).replace(" ", "_")
-    path = os.path.join(output_directory, tenant_name, dashboard_id)
-    if not os.path.exists(path):
-        os.makedirs(path)
+    dir_path = path.join(output_directory, tenant_name, dashboard_id)
+    if not path.exists(dir_path):
+        makedirs(dir_path)
 
     for i, result in enumerate(csv_results, 1):
         metric_name = result['metric_name'].replace(":", "_")
         tile_name = "[" + result['tile_name'].replace(" ", "_").replace("/", "_") + "]"
-        file_path = os.path.join(path, f"{i}_{tile_name}_{metric_name}.csv")
+        file_path = path.join(dir_path, f"{i}_{tile_name}_{metric_name}.csv")
         print(f"{i}: Writing to {file_path}")
         with open(file_path, "w", encoding="utf_8") as file:
             file.write(result['csv_data'])

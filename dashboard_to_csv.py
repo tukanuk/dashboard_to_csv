@@ -1,13 +1,12 @@
 """ Find metrics in a dashboard and produces csv files"""
 
 import argparse
-import os
 import json
+import os
 import re
 
-from colorama import Fore, Style
-
 import requests
+from colorama import Fore, Style
 from requests import HTTPError
 
 import settings
@@ -109,14 +108,24 @@ class DashboardProperties:
             except HTTPError as err:
                 raise SystemExit(err) from err
 
-            regex = r"(?:\()([a-z]+?:[^:]+|com[^:]+)"
+            # find calculated metric expressions
+            regex = r"\)\s*[-+\/*]\s*(\(|\s*\d)"
             matches = re.findall(regex, metric_data['metric'])
-            metric_name = ""
-            for j, match in enumerate(matches):
-                if j > 0:
-                    metric_name += "&" + match
+            if len(matches) == 0:
+                # get the metrics names
+                regex = r"(?:\()([a-z]+?:[^:]+|com[^:]+|iis[^:]+)"
+                matches = re.findall(regex, metric_data['metric'])
+                metric_name = ""
+                if len(matches) > 1:
+                # for j, match in enumerate(matches):
+                    # if j > 0:
+                    metric_name = "multiple_metrics"
+                elif len(matches) == 1:
+                    metric_name = matches[0]
                 else:
-                    metric_name += match
+                    metric_name = "empty"
+            else:
+                metric_name = "calc_metrics"
 
             sep = "\n"
             print(f"{i}: {metric_name:60} ✅ ({response.text.count(sep)} lines)")
